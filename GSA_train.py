@@ -16,4 +16,7 @@ with open('Experiment_config.yaml', 'r') as f :
 def train(model):
     model.train()
     batch_losses = []
-    
+
+def test(test_loader,loadstate=True,medel_loc="",return_graphs=False):
+    pass
+
