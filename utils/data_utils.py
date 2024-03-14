@@ -122,6 +122,6 @@ if __name__ == '__main__':
     weather_data = scaler.transform(weather_data)
     # for node_data, weather_data in data_loader:
     index = 0
-    for node_data, weather_data in get_hour_data(3, 24 * 7 + 3, hour_data, weather_data):
+    for node_data, weather_data in get_train_data(3, 24 * 7 + 3, hour_data, weather_data):
         print(index)
         index += 1
