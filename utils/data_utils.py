@@ -111,20 +111,20 @@ def get_train_data(batch, sample_len, hour_data, weather_data):
             aux_samples = torch.zeros((1, sample_len, weather_data.shape[1]))
             count = 0
 
-
 if __name__ == '__main__':
     # hour_data = np.vstack([get_hour_data(2011,1,2013,12),get_hour_data(2014,7,2017,6)])
     # print(get_weather_data(2011,1,2013,12).shape)
     batch_size = 4 
     hour_data = np.vstack([get_hour_data(2011, 1, 2013, 12), get_hour_data(2014, 7, 2017, 6)])
     weather_data = np.vstack([get_weather_data(2011, 1, 2013, 12), get_weather_data(2014, 7, 2017, 6)])
+    length = hour_data.shape[1]
     scaler = StandardScaler()
     sca_hour_data = scaler.transform(hour_data)
     sca_weather_data = scaler.transform(weather_data)
     # for hour_data, weather_data in data_loader:
-    for hour_data, weather_data in get_train_data(batch_size, 24 * 7 + 3, sca_hour_data, sca_weather_data):
-        train_data = hour_data[:, :24 * 7, :]
-        test_data = hour_data[:, 24 * 7:, :]
+    for hour_data, weather_data in get_train_data(batch_size, length, sca_hour_data, sca_weather_data):
+        train_data = hour_data[:, :length * 0.8, :]
+        test_data = hour_data[:, length * 0.8:, :]
 
     print(hour_data.shape)
     print(weather_data.shape)
