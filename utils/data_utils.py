@@ -115,13 +115,18 @@ def get_train_data(batch, sample_len, hour_data, weather_data):
 if __name__ == '__main__':
     # hour_data = np.vstack([get_hour_data(2011,1,2013,12),get_hour_data(2014,7,2017,6)])
     # print(get_weather_data(2011,1,2013,12).shape)
+    batch_size = 4 
     hour_data = np.vstack([get_hour_data(2011, 1, 2013, 12), get_hour_data(2014, 7, 2017, 6)])
     weather_data = np.vstack([get_weather_data(2011, 1, 2013, 12), get_weather_data(2014, 7, 2017, 6)])
     scaler = StandardScaler()
-    hour_data = scaler.transform(hour_data)
-    weather_data = scaler.transform(weather_data)
-    # for node_data, weather_data in data_loader:
-    index = 0
-    for node_data, weather_data in get_train_data(3, 24 * 7 + 3, hour_data, weather_data):
-        print(index)
-        index += 1
+    sca_hour_data = scaler.transform(hour_data)
+    sca_weather_data = scaler.transform(weather_data)
+    # for hour_data, weather_data in data_loader:
+    for hour_data, weather_data in get_train_data(batch_size, 24 * 7 + 3, sca_hour_data, sca_weather_data):
+        train_data = hour_data[:, :24 * 7, :]
+        test_data = hour_data[:, 24 * 7:, :]
+
+    print(hour_data.shape)
+    print(weather_data.shape)
+    print(train_data.shape)
+    print(test_data.shape)
