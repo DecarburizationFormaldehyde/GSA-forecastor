@@ -4,6 +4,8 @@ import logging
 import random
 import torch
 
+device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 def clones(module,N):
     """
         clone the module N to N layers
@@ -11,7 +13,7 @@ def clones(module,N):
         :param N:
         :return: N layer module
     """
-    return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
+    return nn.ModuleList([copy.deepcopy(module).to(device) for i in range(N)])
 
 def attention(similarity):
     exp_similarity = torch.exp(similarity)
