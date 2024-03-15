@@ -1,4 +1,3 @@
-device: 'cpu'
 # x_seq
 nodes_size: 67
 # aux_dim
