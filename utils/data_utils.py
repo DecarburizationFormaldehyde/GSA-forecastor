@@ -36,7 +36,7 @@ def get_hour_data(start_year: int, start_month: int, end_year: int, end_month: i
         yearStr = str(start_year)
         monthStr = dateToStr(start_month)
         data = pd.read_csv(
-            '/home/zc/program/python/GSA-forecastor/datasets/hour_data_matrix_' + yearStr + '/hour_data_matrix' + yearStr + '-' + monthStr + '.csv', sep=',',
+            './datasets/hour_data_matrix_' + yearStr + '/hour_data_matrix' + yearStr + '-' + monthStr + '.csv', sep=',',
             encoding="utf-8")
         matrix = data.values[:, 4:] if matrix is None else \
             np.concatenate((matrix, data.values[:, 4:]), axis=0)
@@ -50,7 +50,7 @@ def get_hour_data(start_year: int, start_month: int, end_year: int, end_month: i
 
 def get_weather_data(start_year: int, start_month: int, end_year: int, end_month: int):
     weather_data = pd.read_csv(
-        '/home/zc/program/python/GSA-forecastor/datasets/all_padding_ready_weather.csv', sep=',',
+        './datasets/all_padding_ready_weather.csv', sep=',',
         encoding="utf-8")
     filter_data = weather_data.loc[
         (weather_data['year'] * 12 + weather_data['month'] >= start_year * 12 + start_month)
