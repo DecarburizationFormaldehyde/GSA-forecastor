@@ -32,7 +32,11 @@ class DecoderLayer(nn.Module):
 def tn_transform_pre(Q, K, M, T, k):
     Q_v = Q[:, Q.size(1) - M:, :]
     tn_trans = torch.zeros((Q.size(0), 1, k + T - M + 1))
-    for i in range(-T + M, k + 1):
+    for i in range(-T + M, k+1):
+        if T + i - (T - M + i) != M:
+            dd=i
+            aa=Q_v.shape
+            bb=K_v.shape
         K_v = K[:, T - M + i:T + i, :]
         data = torch.sum(torch.multiply(Q_v, K_v), dim=-1, keepdim=True)
         data = torch.mean(data, dim=1, keepdim=True)
@@ -103,4 +107,4 @@ class GSAPredict(nn.Module):
                 res, h0 = self.gru(recent_data[:, j:j + 1, :], h0)
             deta = torch.cat([deta, history_deta + attn[:, :, -1:] * res], dim=-1)
 
-        return x_pre + self.W_0(deta[:, :, 1:])
+        return x_pre + self.W_O(deta[:, :, 1:])
