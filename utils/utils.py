@@ -13,6 +13,11 @@ def clones(module,N):
     """
     return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
 
+def attention(similarity):
+    exp_similarity = torch.exp(similarity)
+    exp_sum_similarity = torch.sum(exp_similarity, dim=-1, keepdim=True)
+    return exp_similarity / (exp_sum_similarity + 1e-6)
+
 # save the console print into the log
 def get_logger(filename, verbosity=1, name=None):
     level_dict = {0: logging.DEBUG, 1: logging.INFO, 2: logging.WARNING}
@@ -32,5 +37,3 @@ def get_logger(filename, verbosity=1, name=None):
  
     return logger
 
-
-\

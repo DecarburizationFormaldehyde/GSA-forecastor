@@ -83,11 +83,13 @@ class GSAFilter(nn.Module):
         nn.init.xavier_uniform_(self.w_p)
 
     def forward(self, x, aux, pos):
+        device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        aux=aux.to(device)
         deta = torch.zeros((x.shape[0], x.shape[1], 1))
         for i in range(self.h):
             Q = F.normalize(self.nodes_linear[0][i](x), p=2, dim=-1)
             K = F.normalize(self.nodes_linear[1][i](x), p=2, dim=-1)
-            tn_dot_1 = self.w * tn_transform_filter(Q, K, self.M_1, self.M_2, self.T)
+            tn_dot_1 = self.w * tn_transform_filter(Q, K, self.M_1, self.M_2, self.T).to(device)
 
             QA = F.normalize(self.aux_linear[0][i](aux), p=2, dim=-1)
             KA = F.normalize(self.aux_linear[1][i](aux), p=2, dim=-1)

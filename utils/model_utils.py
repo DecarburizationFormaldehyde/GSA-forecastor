@@ -5,13 +5,14 @@
 # @contact: 2117920996@qq.com
 # @time: 2024/3/15 11:29
 import torch.nn as nn
-
+import torch
 from model.GSA import GSAForecaster
 from model.encoder import Encoder, EncoderLayer, GSAFilter
 from model.decoder import Decoder, DecoderLayer, GSAPredict
 from model.embeddings import GraphEmbeddings, AuxEmbeddings, PosEmbeddings
 from model.sparse_linear import SparseLinear
 from model.ffd import FFD
+
 
 
 def getGSA(

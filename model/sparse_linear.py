@@ -59,6 +59,10 @@ def gen_sparse_mask(input_feature, output_feature, graph_dependency, reserve):
 class LinearFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx, input, weight, bias=None, mask=None):
+        device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        weight=weight.to(device)
+        mask=mask.to(device)
+        bias=bias.to(device)
         if mask is not None:
             weight = weight * mask
         output = input.matmul(weight.t())
