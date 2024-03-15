@@ -1,0 +1,23 @@
+# x_seq
+nodes_size: 67
+# aux_dim
+a_dim: 5
+# head
+h: 2
+# nodes_size*h
+d_model: 134
+d_aux: 16
+d_pos: 16
+# d_model*(h+1)
+d_hidden: 402
+num_encoder_layers: 1
+num_decoder_layers: 2
+num_gru_layers: 2
+M_1: 9
+M_2: 9
+M: 20
+# hours of a week
+T: 168
+# predict next three hours
+pre_time: 3
+dropout: 0.01
