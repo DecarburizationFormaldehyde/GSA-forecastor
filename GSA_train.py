@@ -18,7 +18,8 @@ with open('Experiment_config.yaml', 'r') as f :
 def train(model):
     model.train()
     batch_losses = []
-    temp_w=[]
+    for i,() in enumerate(trian_loader):
+        pass
     
 
 
@@ -41,7 +42,6 @@ savePath='/output'
 step=1
 n_epochs=50
 
-model=GSA(
-    Encoder(),Decoder(),
+
     
 )

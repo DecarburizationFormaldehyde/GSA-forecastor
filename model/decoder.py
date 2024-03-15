@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from model.sparse_linear import SparseLinear
-from utils.tools import clones, attention
+from utils.utils import attention,clones
 import torch.nn.functional as F
 
 

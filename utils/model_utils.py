@@ -14,7 +14,7 @@ from model.sparse_linear import SparseLinear
 from model.ffd import FFD
 
 
-def make_model(
+def getGSA(
         nodes_size,
         a_dim,
         h,

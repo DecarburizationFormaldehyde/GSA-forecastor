@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from model.sparse_linear import SparseLinear
-from utils.tools import clones, attention
+from utils.utils import attention,clones
 
 
 class Encoder(nn.Module):
