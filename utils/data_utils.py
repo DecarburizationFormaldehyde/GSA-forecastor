@@ -128,6 +128,7 @@ def get_dataloaders(dataset, batch_size = 16, seq_len = 168, horizon = 3, scale 
     return train_loader, test_loader, test_loader_one, scaler
 
 
+'''
 class DataLoader(Dataset, ABC):
     def __init__(self, batch_size, sample_len):
         self.batch_size = batch_size
@@ -175,6 +176,7 @@ def get_train_data(batch, sample_len, hour_data, weather_data):
             nodes_samples = torch.zeros((1, sample_len, hour_data.shape[1]))
             aux_samples = torch.zeros((1, sample_len, weather_data.shape[1]))
             count = 0
+'''
 
 if __name__ == '__main__':
     # hour_data = np.vstack([get_hour_data(2011,1,2013,12),get_hour_data(2014,7,2017,6)])
@@ -186,12 +188,6 @@ if __name__ == '__main__':
     scaler = StandardScaler()
     sca_hour_data = scaler.transform(hour_data)
     sca_weather_data = scaler.transform(weather_data)
-    # for hour_data, weather_data in data_loader:
-    for hour_data, weather_data in get_train_data(batch_size, sample_len, sca_hour_data, sca_weather_data):
-        train_data = hour_data[:, :int(sample_len * 0.8), :]
-        test_data = hour_data[:, int(sample_len * 0.8):, :]
 
     print(hour_data.shape)
     print(weather_data.shape)
-    print(train_data.shape)
-    print(test_data.shape)
