@@ -58,15 +58,40 @@ def get_weather_data(start_year: int, start_month: int, end_year: int, end_month
     matrix = filter_data.values[:, 4:]
     return matrix   
 
+# hour_data = np.vstack([get_hour_data(2011, 1, 2013, 12), get_hour_data(2014, 7, 2017, 6)])
+# weather_data = np.vstack([get_weather_data(2011, 1, 2013, 12), get_weather_data(2014, 7, 2017, 6)])
+# houe_data: (52608, 67) weather_data: (52608, 5) all_data: (52608, 72)
+# 划分数据集及标准化
+def read_data(all_data, seq_len, scale = True):
+    
+    df = pd.DataFrame(all_data)
+    scaler = None
+
+    n_train = int(len(df[0]) * 0.8)
+    n_test = int(len(df[0]) * 0.2)
+
+    train_begin = 0 
+    train_end = n_train
+
+    test_begin = len(df) - n_test - seq_len
+    test_end = len(df)
+
+    if scale: 
+        scaler = StandardScaler()
+        train_data = df[0:n_train]
+        scaler.fit(train_data.values)
+        data = scaler.transform(df.values)
+    else:
+        data = df.values
+
+    return data[train_begin:train_end], data[test_begin:test_end], scaler, [train_begin, test_begin]
+
+
+# all_data: (52608, 72)
 class DataLoader(Dataset, ABC):
     def __init__(self, batch_size, sample_len):
         self.batch_size = batch_size
         self.sample_len = sample_len
-        hour_data = np.vstack([get_hour_data(2011, 1, 2013, 12), get_hour_data(2014, 7, 2017, 6)])
-        weather_data = np.vstack([get_weather_data(2011, 1, 2013, 12), get_weather_data(2014, 7, 2017, 6)])
-        scaler = StandardScaler()
-        hour_data = scaler.fit_transform(hour_data)
-        weather_data = scaler.fit_transform(weather_data)
         self.hour_data = hour_data
         self.weather_data = weather_data
 
@@ -114,17 +139,17 @@ def get_train_data(batch, sample_len, hour_data, weather_data):
 if __name__ == '__main__':
     # hour_data = np.vstack([get_hour_data(2011,1,2013,12),get_hour_data(2014,7,2017,6)])
     # print(get_weather_data(2011,1,2013,12).shape)
-    batch_size = 4 
+    batch_size = 3
     hour_data = np.vstack([get_hour_data(2011, 1, 2013, 12), get_hour_data(2014, 7, 2017, 6)])
     weather_data = np.vstack([get_weather_data(2011, 1, 2013, 12), get_weather_data(2014, 7, 2017, 6)])
-    length = hour_data.shape[1]
+    sample_len = 24*7+3
     scaler = StandardScaler()
     sca_hour_data = scaler.transform(hour_data)
     sca_weather_data = scaler.transform(weather_data)
     # for hour_data, weather_data in data_loader:
-    for hour_data, weather_data in get_train_data(batch_size, length, sca_hour_data, sca_weather_data):
-        train_data = hour_data[:, :length * 0.8, :]
-        test_data = hour_data[:, length * 0.8:, :]
+    for hour_data, weather_data in get_train_data(batch_size, sample_len, sca_hour_data, sca_weather_data):
+        train_data = hour_data[:, :int(sample_len * 0.8), :]
+        test_data = hour_data[:, int(sample_len * 0.8):, :]
 
     print(hour_data.shape)
     print(weather_data.shape)
