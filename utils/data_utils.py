@@ -88,6 +88,46 @@ def read_data(all_data, seq_len, scale = True):
 
 
 # all_data: (52608, 72)
+# 划分X与y
+# 两种预测任务：
+# 1、以 7 * 24 = 168h 预测接下来3h
+# 2、以前四周同一天的数据 4 * 24 = 96h 预测接下来的3h
+class seq_data(Dataset):
+    def __init__(self, data, start, seq_len = 168, horizon = 3, args = None):
+        self.data = data
+        self.seq_len = seq_len 
+        self.horizon = horizon
+        self.start = start   
+        self.mode = "task1"
+
+    def __getitem__(self, index):
+        seq_begin = index 
+        seq_end = index + self.seq_len
+        label_end = seq_end + self.horizon
+
+        if self.mode == "task1":
+            label_begin = seq_end + self.horizon - 2
+
+        return self.data[seq_begin:seq_end], self.data[label_begin: label_end]
+
+    def __len__(self):
+        return len(self.data) - self.seq_len - self.horizon + 1
+
+# 批处理
+def get_dataloaders(dataset, batch_size = 16, seq_len = 168, horizon = 3, scale = True, cut = None, args = None):
+
+    train, test, scaler, starts = read_data(dataset,seq_len)
+
+    train_data = seq_data(train, starts[0], seq_len, horizon, args)
+    test_data = seq_data(test, starts[1], seq_len, horizon, args)
+    
+    train_loader = DataLoader(train_data, batch_size = batch_size, shuffle = True, drop_last = True)
+    test_loader = DataLoader(test_data, batch_size = batch_size, shuffle = False, drop_last = True)
+    test_loader_one = DataLoader(test_data, batch_size = 1, shuffle = False, drop_last = False)
+
+    return train_loader, test_loader, test_loader_one, scaler
+
+
 class DataLoader(Dataset, ABC):
     def __init__(self, batch_size, sample_len):
         self.batch_size = batch_size
