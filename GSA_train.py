@@ -95,6 +95,9 @@ model=getGSA(
         dropout=0.01
 ).to(device)
 
+for name, param in model.named_parameters():
+    print(f"{name}: {param.device}")
+
 criterion =  nn.MSELoss()
 optimizer=optim.Adam(model.parameters(),lr=0.001)
 

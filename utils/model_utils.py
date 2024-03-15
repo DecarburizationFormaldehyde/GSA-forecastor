@@ -53,5 +53,3 @@ def getGSA(
         PosEmbeddings(d_pos=d_pos, dropout=dropout)
     )
     return model
-
-
