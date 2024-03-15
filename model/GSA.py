@@ -1,4 +1,3 @@
-
 # -*- coding:utf-8 -*-
 # @project: GSA-forecastor
 # @filename: GSAForecaster.py
@@ -18,6 +17,7 @@ class GSAForecaster(nn.Module):
     """
     标准Encoder-Decoder模型
     """
+
     def __init__(self, encoder, decoder, graph_embed, aux_embed, pos_embed):
         super(GSAForecaster, self).__init__()
         self.encoder = encoder
@@ -38,11 +38,11 @@ class GSAForecaster(nn.Module):
         T = x.size(1)
         pre_seq = torch.zeros(x.size(0), 1, x.size(-1))
         for i in range(pre_time):
-            aux_emb = self.aux_embed(aux[:, :aux.size(1)-pre_time+i, :])
-            pos_emb = self.pos_embed(pos[:, :pos.size(1)-pre_time+i, :])
+            aux_emb = self.aux_embed(aux[:, :aux.size(1) - pre_time + i, :])
+            pos_emb = self.pos_embed(pos[:, :pos.size(1) - pre_time + i, :])
             x_emb = self.graph_embed(x)
-            encode = self.encoder(x_emb[:, :T, :],aux_emb[:, :T, :],pos_emb[:, :T, :])
+            encode = self.encoder(x_emb[:, :T, :], aux_emb[:, :T, :], pos_emb[:, :T, :])
             encode_combine = encode if i == 0 else torch.cat([encode, x_emb[:, T:, :]], dim=1)
-            x_pre = self.decoder(i+1, encode_combine, encode_combine[:, -1:, :], aux_emb, pos_emb)
+            x_pre = self.decoder(i + 1, encode_combine, encode_combine[:, -1:, :], aux_emb, pos_emb)
             pre_seq = torch.cat([pre_seq, x_pre], dim=1)
         return pre_seq[:, 1:, :]
