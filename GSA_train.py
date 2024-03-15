@@ -10,13 +10,18 @@ from model.decoder import Decoder,GSAFilter
 device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 from model.GSA import GSA
-# configure of model and data
+#optian the configure from yaml
 with open('Experiment_config.yaml', 'r') as f :
     config = list(yaml.load_all(f))[0]
+
 # train
 def train(model):
     model.train()
     batch_losses = []
+    temp_w=[]
+    
+
+
 # test
 def test(test_loader,loadstate=True,medel_loc="",return_graphs=False):
     pass
@@ -30,10 +35,12 @@ def test(test_loader,loadstate=True,medel_loc="",return_graphs=False):
 train_loss=[]
 
 # Save args
+savePath='/output'
 
 # Training
 step=1
 n_epochs=50
+
 model=GSA(
     Encoder(),Decoder(),
     

@@ -7,6 +7,11 @@
 import torch
 import torch.nn as nn
 
+"""
+嵌入层在数据变化后必然也会带来mask的变化，新的数据会影响mean和precison
+所以mask在每次预测和训练都要重新算
+"""
+
 
 class GSAForecaster(nn.Module):
     """
