@@ -39,26 +39,98 @@ def assign_neurons(input_feature, output_feature, method='uniform'):
     return assign_index
 
 
-def gen_sparse_mask(input_feature, output_feature, graph_dependency):
-    assign_index = assign_neurons(input_feature, output_feature)
+def gen_sparse_mask(input_feature, output_feature, graph_dependency, reserve):
     assert input_feature == len(graph_dependency), \
         "请确保输入神经元数量与图依赖性数量相等"
+    assert input_feature <= output_feature, \
+        "输入神经元数量应小于等于输出神经元数量"
+    assign_index = assign_neurons(input_feature, output_feature)
+
     weight_mask = np.zeros((input_feature, output_feature))
     for row in range(input_feature):
         assign_indices = [assign_index[i] for i, dep in enumerate(graph_dependency[row] == 1) if dep]
         for indices in assign_indices:
             for index in indices:
                 weight_mask[row, index] = 1
-    return torch.from_numpy(weight_mask).float()
+    return torch.from_numpy(weight_mask).float().t() if not reserve else \
+            torch.from_numpy(weight_mask).float()
+
+
+class LinearFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, input, weight, bias=None, mask=None):
+        if mask is not None:
+            weight = weight * mask
+        output = input.matmul(weight.t())
+        if bias is not None:
+            output += bias.unsqueeze(0).expand_as(output)
+        ctx.save_for_backward(input, weight, bias, mask)
+        return output
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        input, weight, bias, mask = ctx.saved_tensors
+        grad_input = grad_weight = grad_bias = grad_mask = None
+
+        if ctx.needs_input_grad[0]:
+            grad_input = grad_output.matmul(weight)
+
+        if ctx.needs_input_grad[1]:
+            grad_weight = grad_output.transpose(-2,-1).matmul(input)
+            if mask is not None:
+                grad_weight = grad_weight * mask
+        if ctx.needs_input_grad[2]:
+            grad_bias = grad_output.sum(dim=1)
+
+        return grad_input, grad_weight, grad_bias, grad_mask
 
 
 class SparseLinear(nn.Module):
-    def __init__(self, input_feature, output_feature, graph_dependency=None, reserve=False):
+    def __init__(self, input_features, output_features, bias=True, graph_dependency=None, reserve=False):
         super(SparseLinear, self).__init__()
+        self.input_features = input_features if not reserve else output_features
+        self.output_features = output_features if not reserve else input_features
+
+        self.weight = nn.Parameter(torch.Tensor(self.output_features, self.input_features))
+
+        if bias:
+            self.bias = nn.Parameter(torch.Tensor(self.output_features))
+        else:
+            self.register_parameter('bias', None)
+
+        self.init_params()
         if graph_dependency is not None:
-            self.sparse_mask = gen_sparse_mask(output_feature, input_feature, graph_dependency)
+            mask = gen_sparse_mask(input_features, output_features, graph_dependency, reserve)
+            mask = mask.clone().detach()
+            self.mask = nn.Parameter(mask, requires_grad=False)
+        else:
+            self.mask = None
 
-        self.reset_parameters()
+    def init_params(self):
+        nn.init.kaiming_normal_(self.weight, mode='fan_out', nonlinearity='relu')
+        nn.init.uniform_(self.bias, a=0, b=1)
 
-    def reset_parameters(self):
-        nn.init.kaiming_uniform_(self.weight)
+    def forward(self, input):
+        return LinearFunction.apply(input, self.weight, self.bias, self.mask)
+
+    def extra_repr(self) -> str:
+        return 'in_features={}, out_features={}, bias={}, mask={}'.format(
+            self.input_features, self.output_features, self.bias is not None, self.mask is not None
+        )
+
+
+# class SparseLinear(nn.Module):
+#     def __init__(self, input_feature, output_feature, graph_dependency=None, reserve=False):
+#         super(SparseLinear, self).__init__()
+#         if graph_dependency is not None:
+#             self.sparse_mask = gen_sparse_mask(input_feature, output_feature, graph_dependency, reserve)
+#         else:
+#             self.sparse_mask = torch.ones((input_feature, output_feature))
+#         # 创建全连接层，并根据稀疏性掩码调整权重
+#         self.fc1 = nn.Linear(input_feature, output_feature, bias=False)
+#         self.fc1.weight.data *= self.sparse_mask
+#
+#     def forward(self, x):
+#         return self.fc1(x)
+
+
