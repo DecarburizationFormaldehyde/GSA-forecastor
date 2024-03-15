@@ -35,7 +35,7 @@ def get_hour_data(start_year: int, start_month: int, end_year: int, end_month: i
         yearStr = str(start_year)
         monthStr = dateToStr(start_month)
         data = pd.read_csv(
-            'GSA-forecastor\datasets\hour_data_matrix_' + yearStr + '/hour_data_matrix' + yearStr + '-' + monthStr + '.csv', sep=',',
+            '/home/zc/program/python/GSA-forecastor/datasets/hour_data_matrix_' + yearStr + '/hour_data_matrix' + yearStr + '-' + monthStr + '.csv', sep=',',
             encoding="utf-8")
         matrix = data.values[:, 4:] if matrix is None else \
             np.concatenate((matrix, data.values[:, 4:]), axis=0)
@@ -49,7 +49,7 @@ def get_hour_data(start_year: int, start_month: int, end_year: int, end_month: i
 
 def get_weather_data(start_year: int, start_month: int, end_year: int, end_month: int):
     weather_data = pd.read_csv(
-        'GSA-forecastor\datasets\\all_padding_ready_weather.csv', sep=',',
+        '/home/zc/program/python/GSA-forecastor/datasets/all_padding_ready_weather.csv', sep=',',
         encoding="utf-8")
     filter_data = weather_data.loc[
         (weather_data['year'] * 12 + weather_data['month'] >= start_year * 12 + start_month)
@@ -57,6 +57,13 @@ def get_weather_data(start_year: int, start_month: int, end_year: int, end_month
     matrix = filter_data.values[:, 4:]
     return matrix   
 
+def get_data(start_year: int, start_month: int, end_year: int, end_month: int,flag=True):
+    hour_data=get_hour_data(start_year,start_month,end_year,end_month)
+    weather_data=get_weather_data(start_year,start_month,end_year,end_month)
+    if(flag):
+        return np.hstack([hour_data,weather_data])
+    else:
+        return hour_data
 # hour_data = np.vstack([get_hour_data(2011, 1, 2013, 12), get_hour_data(2014, 7, 2017, 6)])
 # weather_data = np.vstack([get_weather_data(2011, 1, 2013, 12), get_weather_data(2014, 7, 2017, 6)])
 # houe_data: (52608, 67) weather_data: (52608, 5) all_data: (52608, 72)

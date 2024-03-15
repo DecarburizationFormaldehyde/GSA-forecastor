@@ -1,3 +1,13 @@
+start_year: 2011
+start_month: 1
+end_year: 2019
+end_month: 12
+
+# Save args
+savePath : output/
+
+#output
+
 # x_seq
 nodes_size: 67
 # aux_dim

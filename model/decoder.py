@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from model.sparse_linear import SparseLinear
-from utils.tools import clones, attention
+from utils.utils import attention,clones
 import torch.nn.functional as F
 
 
@@ -80,12 +80,13 @@ class GSAPredict(nn.Module):
         nn.init.xavier_uniform_(self.w_p)
 
     def forward(self, k, memory, x_pre, aux, pos):
+        device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         deta = torch.zeros((x_pre.shape[0], x_pre.shape[1], 1))
         x = torch.cat([memory, x_pre], dim=1)
         for i in range(self.h):
             Q = F.normalize(self.nodes_linear[0][i](x), p=2, dim=-1)
             K = F.normalize(self.nodes_linear[1][i](x), p=2, dim=-1)
-            tn_dot_1 = self.w * tn_transform_pre(Q, K, self.M, self.T, k)
+            tn_dot_1 = self.w * tn_transform_pre(Q, K, self.M, self.T, k).to(device)
 
             QA = F.normalize(self.aux_linear[0][i](aux), p=2, dim=-1)
             KA = F.normalize(self.aux_linear[1][i](aux), p=2, dim=-1)

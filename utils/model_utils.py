@@ -5,7 +5,7 @@
 # @contact: 2117920996@qq.com
 # @time: 2024/3/15 11:29
 import torch.nn as nn
-
+import torch
 from model.GSA import GSAForecaster
 from model.encoder import Encoder, EncoderLayer, GSAFilter
 from model.decoder import Decoder, DecoderLayer, GSAPredict
@@ -14,7 +14,8 @@ from model.sparse_linear import SparseLinear
 from model.ffd import FFD
 
 
-def make_model(
+
+def getGSA(
         nodes_size,
         a_dim,
         h,
@@ -52,5 +53,3 @@ def make_model(
         PosEmbeddings(d_pos=d_pos, dropout=dropout)
     )
     return model
-
-
