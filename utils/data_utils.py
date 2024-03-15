@@ -2,7 +2,6 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd 
 import numpy as np
-from abc import ABC
 
 class StandardScaler():
     def __init__(self):
@@ -92,21 +91,23 @@ def read_data(all_data, seq_len, scale = True):
 # 两种预测任务：
 # 1、以 7 * 24 = 168h 预测接下来3h
 # 2、以前四周同一天的数据 4 * 24 = 96h 预测接下来的3h
-class seq_data(Dataset):
-    def __init__(self, data, start, seq_len = 168, horizon = 3, args = None):
+class SeqData(Dataset):
+    def __init__(self, data, start, seq_len = 168, horizon = 3, flag = "hour"):
         self.data = data
         self.seq_len = seq_len 
         self.horizon = horizon
         self.start = start   
-        self.mode = "task1"
+        self.flag = flag
 
     def __getitem__(self, index):
         seq_begin = index 
         seq_end = index + self.seq_len
         label_end = seq_end + self.horizon
 
-        if self.mode == "task1":
-            label_begin = seq_end + self.horizon - 2
+        if self.flag == "hour":
+            label_begin = seq_end + self.horizon - 3
+        else:
+            label_begin = label_end
 
         return self.data[seq_begin:seq_end], self.data[label_begin: label_end]
 
@@ -114,80 +115,45 @@ class seq_data(Dataset):
         return len(self.data) - self.seq_len - self.horizon + 1
 
 # 批处理
-def get_dataloaders(dataset, batch_size = 16, seq_len = 168, horizon = 3, scale = True, cut = None, args = None):
+def get_dataloaders(train, test, starts, batch_size = 16, seq_len = 168, horizon = 3, flag = "hour"):
 
-    train, test, scaler, starts = read_data(dataset,seq_len)
-
-    train_data = seq_data(train, starts[0], seq_len, horizon, args)
-    test_data = seq_data(test, starts[1], seq_len, horizon, args)
+    train_data = SeqData(train, starts[0], seq_len, horizon, flag)
+    test_data = SeqData(test, starts[1], seq_len, horizon, flag)
     
     train_loader = DataLoader(train_data, batch_size = batch_size, shuffle = True, drop_last = True)
     test_loader = DataLoader(test_data, batch_size = batch_size, shuffle = False, drop_last = True)
-    test_loader_one = DataLoader(test_data, batch_size = 1, shuffle = False, drop_last = False)
+    # test_loader_one = DataLoader(test_data, batch_size = 1, shuffle = False, drop_last = False)
 
-    return train_loader, test_loader, test_loader_one, scaler
+    # return train_loader, test_loader, test_loader_one
+    return train_loader, test_loader
 
+def final_get_dataloaders(start_year: int, start_month: int, end_year: int, end_month: int):
+    hour_data = get_hour_data(start_year, start_month, end_year, end_month)
+    weather_data = get_weather_data(start_year, start_month, end_year, end_month)
 
-'''
-class DataLoader(Dataset, ABC):
-    def __init__(self, batch_size, sample_len):
-        self.batch_size = batch_size
-        self.sample_len = sample_len
-        self.hour_data = hour_data
-        self.weather_data = weather_data
+    hour_train_data, hour_test_data, scale, starts = read_data(hour_data, seq_len = 168)
+    weather_train_data, weather_test_data, _, _= read_data(weather_data, seq_len = 168)
 
-    def process_data(self,data):
-        samples = torch.zeros((1, self.sample_len, data.shape[1]))
-        for i in range(len(data)):
-            sample = data[i:i + self.sample_len]
-            samples = torch.cat((samples, sample.unsqueeze(0)), dim=0)
-        return samples[1:, :, :]
+    hour_train_loader, hour_test_loader = get_dataloaders(hour_train_data, hour_test_data, starts, batch_size = 16, seq_len = 168, horizon = 3, flag = "hour")
+    weather_train_loader, weather_test_loader = get_dataloaders(weather_train_data, weather_test_data, starts, batch_size = 16, seq_len = 168, horizon = 3, flag = "weather")
 
-    def __getitem__(self, item):
-        start = item * self.batch_size
-        end = (item + 1) * self.batch_size
-        if end > len(self.hour_data):
-            end = len(self.hour_data)
-        batch_data = self.hour_data[start:end]
-        batch_weather = self.weather_data[start:end]
-        return batch_data, batch_weather
-
-    def __len__(self):
-        return (len(self.hour_data) + self.batch_size - 1) // self.batch_size
-    
-def get_train_data(batch, sample_len, hour_data, weather_data):
-    indices = np.arange(0,hour_data.shape[0] - sample_len + 1,sample_len)
-    # indices = np.arange(hour_data.shape[0] - sample_len + 1)
-    np.random.shuffle(indices)
-    nodes_samples = torch.zeros((1, sample_len, hour_data.shape[1]))
-    aux_samples = torch.zeros((1, sample_len, weather_data.shape[1]))
-    count = 0
-    index = 0
-    for i in indices:
-        node_sample = torch.from_numpy(hour_data[i:i + sample_len]).float()
-        nodes_samples = torch.cat((nodes_samples, node_sample.unsqueeze(0)), dim=0)
-        aux_sample = torch.from_numpy(weather_data[i:i + sample_len]).float()
-        aux_samples = torch.cat((aux_samples, aux_sample.unsqueeze(0)), dim=0)
-        count += 1
-        index += 1
-        if count == batch:
-            print("第{}个batch".format(index // batch))
-            yield nodes_samples[1:, :, :], aux_samples[1:, :, :]
-            nodes_samples = torch.zeros((1, sample_len, hour_data.shape[1]))
-            aux_samples = torch.zeros((1, sample_len, weather_data.shape[1]))
-            count = 0
-'''
+    return hour_train_loader, weather_train_loader, hour_test_loader, weather_test_loader, scale
 
 if __name__ == '__main__':
     # hour_data = np.vstack([get_hour_data(2011,1,2013,12),get_hour_data(2014,7,2017,6)])
     # print(get_weather_data(2011,1,2013,12).shape)
-    batch_size = 3
-    hour_data = np.vstack([get_hour_data(2011, 1, 2013, 12), get_hour_data(2014, 7, 2017, 6)])
-    weather_data = np.vstack([get_weather_data(2011, 1, 2013, 12), get_weather_data(2014, 7, 2017, 6)])
-    sample_len = 24*7+3
-    scaler = StandardScaler()
-    sca_hour_data = scaler.transform(hour_data)
-    sca_weather_data = scaler.transform(weather_data)
-
-    print(hour_data.shape)
-    print(weather_data.shape)
+    # batch_size = 3
+    # hour_data = np.vstack([get_hour_data(2011, 1, 2013, 12), get_hour_data(2014, 7, 2017, 6)])
+    # weather_data = np.vstack([get_weather_data(2011, 1, 2013, 12), get_weather_data(2014, 7, 2017, 6)])
+    # sample_len = 24*7+3
+    # scaler = StandardScaler()
+    # sca_hour_data = scaler.transform(hour_data)
+    # sca_weather_data = scaler.transform(weather_data)
+    # print(hour_data.shape)
+    # print(weather_data.shape)
+    hour_train_loader, weather_train_loader, hour_test_loader, weather_test_loader, scale = final_get_dataloaders(2011,1,2019,12)
+    print("=================================")
+    for x, y in hour_train_loader:
+        print(x.shape)
+        print(y.shape)
+        break
