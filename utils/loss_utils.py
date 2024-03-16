@@ -93,7 +93,7 @@ class SpeicalLoss:
         loss=self.niu*loss1+loss2
         
         loss.backward()
-        return loss,loss1,loss2
+        return loss
 
 class SimpleLossCompute:
     "A simple loss compute and train function."

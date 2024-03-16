@@ -32,7 +32,7 @@ def train(model,logger):
 
         y_hat=model(x_batch.float().to(device),x_a_batch.float().to(device),step)
         
-        loss,_ = criterion.__call__(y_hat,y_batch.float().to(device))
+        loss= criterion.__call__(y_hat,y_batch.float().to(device))
 
         optimizer.step()
         optimizer.zero_grad()
