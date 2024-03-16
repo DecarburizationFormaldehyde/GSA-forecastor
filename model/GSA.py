@@ -37,13 +37,17 @@ class GSAForecaster(nn.Module):
         device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         T = x.size(1)
         pre_seq = torch.zeros(x.size(0), 1, x.size(-1)).to(device)
+        attn_list = []
+        score_list = []
         for i in range(pre_time):
             aux_emb = self.aux_embed(aux[:, :aux.size(1) - pre_time + i, :])
             pos_emb = self.pos_embed(aux[:, :aux.size(1) - pre_time + i, :])
             x_emb = self.graph_embed(x)
             encode, _ = self.encoder(x_emb[:, :T, :], aux_emb[:, :T, :], pos_emb[:, :T, :])
             encode_combine = encode if i == 0 else torch.cat([encode, x_emb[:, T:, :]], dim=1)
-            x_pre, _ = self.decoder(i + 1, encode_combine, encode_combine[:, -1:, :], aux_emb, pos_emb)
+            x_pre, attn_matrix, score_matrix = self.decoder(i + 1, encode_combine, encode_combine[:, -1:, :], aux_emb, pos_emb)
+            attn_list.append(attn_matrix)
+            score_list.append(score_matrix)
             x = torch.cat([x, x_pre], dim=1)
             pre_seq = torch.cat([pre_seq, x_pre], dim=1)
-        return pre_seq[:, 1:, :]
+        return pre_seq[:, 1:, :], attn_list, score_list

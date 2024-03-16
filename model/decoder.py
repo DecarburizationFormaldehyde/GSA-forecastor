@@ -83,8 +83,7 @@ class GSAPredict(nn.Module):
         device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         deta = torch.zeros((x_pre.shape[0], x_pre.shape[1], 1)).to(device)
         x = torch.cat([memory, x_pre], dim=1)
-        attn_list = []
-        score_list = []
+        attn_matrix = torch.zeros((x_pre.shape[0], x_pre.shape[1], 1)).to(device)
         for i in range(self.h):
             Q = F.normalize(self.nodes_linear[0][i](x), p=2, dim=-1)
             K = F.normalize(self.nodes_linear[1][i](x), p=2, dim=-1)
@@ -100,7 +99,7 @@ class GSAPredict(nn.Module):
 
             all_similarity = tn_dot_1 + dot_2 + dot_3
             attn = attention(all_similarity)
-            attn_list.append(attn)
+            attn_matrix = torch.cat([attn_matrix, attn], dim=-1)
             history_deta = torch.matmul(attn[:, :, :-1],
                                         self.nodes_linear[2][i](x[:, x.size(1) - k - self.T + self.M - 1:-1, :]))
             recent_data = x[:, -self.M:-1, :]
@@ -109,7 +108,6 @@ class GSAPredict(nn.Module):
             for j in range(self.M - 1):
                 res, h0 = self.gru(recent_data[:, j:j + 1, :], h0)
             score = history_deta + attn[:, :, -1:] * res
-            score_list.append(score)
             deta = torch.cat([deta, score], dim=-1)
 
-        return x_pre + self.W_O(deta[:, :, 1:]), (attn_list, score_list)
+        return x_pre + self.W_O(deta[:, :, 1:]), (attn_matrix[:, :, 1:], deta[:, :, 1:])
