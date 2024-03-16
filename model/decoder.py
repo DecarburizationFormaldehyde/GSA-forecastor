@@ -81,7 +81,7 @@ class GSAPredict(nn.Module):
 
     def forward(self, k, memory, x_pre, aux, pos):
         device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        deta = torch.zeros((x_pre.shape[0], x_pre.shape[1], 1))
+        deta = torch.zeros((x_pre.shape[0], x_pre.shape[1], 1)).to(device)
         x = torch.cat([memory, x_pre], dim=1)
         for i in range(self.h):
             Q = F.normalize(self.nodes_linear[0][i](x), p=2, dim=-1)

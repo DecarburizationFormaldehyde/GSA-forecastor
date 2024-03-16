@@ -115,6 +115,7 @@ class SeqData(Dataset):
             label_begin = seq_end + self.horizon - 3
         else:
             label_begin = label_end
+            seq_end = label_end
 
         return self.data[seq_begin:seq_end], self.data[label_begin: label_end]
 

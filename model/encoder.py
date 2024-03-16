@@ -84,7 +84,7 @@ class GSAFilter(nn.Module):
 
     def forward(self, x, aux, pos):
         device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        deta = torch.zeros((x.shape[0], x.shape[1], 1))
+        deta = torch.zeros((x.shape[0], x.shape[1], 1)).to(device)
         for i in range(self.h):
             Q = F.normalize(self.nodes_linear[0][i](x), p=2, dim=-1)
             K = F.normalize(self.nodes_linear[1][i](x), p=2, dim=-1)

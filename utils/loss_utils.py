@@ -70,3 +70,32 @@ class mase_loss(nn.Module):
         masep = t.mean(t.abs(insample[:, freq:] - insample[:, :-freq]), dim=1)
         masked_masep_inv = divide_no_nan(mask, masep[:, None])
         return t.mean(t.abs(target - forecast) * masked_masep_inv)
+    
+class SpeicalLoss:
+    def __init__(self,criterion1,criterion2,niu):
+        self.criterion1=criterion1
+        self.criterion2=criterion2
+        self.niu=niu
+    
+    def __call__(self,y_pre,y):
+        loss1=self.criterion1(y_pre,y)
+        loss2=self.criterion2(y_pre,y)
+        loss=self.niu*loss1+loss2
+
+class SimpleLossCompute:
+    "A simple loss compute and train function."
+
+    def __init__(self, generator, criterion, opt=None):
+        self.generator = generator
+        self.criterion = criterion
+        self.opt = opt
+
+    def __call__(self, x, y, norm):
+        x = self.generator(x)
+        loss = self.criterion(x.contiguous().view(-1, x.size(-1)),
+                              y.contiguous().view(-1)) / norm
+        loss.backward()
+        if self.opt is not None:
+            self.opt.step()
+            self.opt.optimizer.zero_grad()
+        return loss * norm

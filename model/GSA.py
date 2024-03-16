@@ -34,8 +34,9 @@ class GSAForecaster(nn.Module):
         :param pre_time: 预测时间步
         :return: 返回pre_time时间步的预测结果
         """
+        device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         T = x.size(1)
-        pre_seq = torch.zeros(x.size(0), 1, x.size(-1))
+        pre_seq = torch.zeros(x.size(0), 1, x.size(-1)).to(device)
         for i in range(pre_time):
             aux_emb = self.aux_embed(aux[:, :aux.size(1) - pre_time + i, :])
             pos_emb = self.pos_embed(aux[:, :aux.size(1) - pre_time + i, :])

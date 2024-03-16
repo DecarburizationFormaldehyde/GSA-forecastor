@@ -17,24 +17,30 @@ with open('Experiment_config.yaml', 'r') as f :
     config = yaml.load(f,Loader=yaml.FullLoader)
 
 # optian the datasetsLoader
-train_loader, test_loader, test_loader_one, scaler=get_dataloaders(get_data(config['start_year'],config['start_month'],config['end_year'],config['end_month']))
-
+hour_train_loader, weather_train_loader, hour_test_loader, weather_test_loader, scale=final_get_dataloaders(config['start_year'],config['start_month'],config['end_year'],config['end_month'])
 
 # train
-def train(model):
+def train(model,logger):
     model.train()
     batch_losses = []
-    for i,batch in enumerate(train_loader):   
+    i=0
+    for batch,batch_a in zip(hour_train_loader,weather_train_loader):
+        t0 = time.time()  
         x_batch, y_batch = batch[0].float().to(device), batch[1].float().to(device)
-        y_hat=model(x_batch[:,:,:67].float().to(device),x_batch[:,:,67:].float().to(device),step)
+        x_a_batch, _ = batch_a[0].float().to(device), batch_a[1].float().to(device)
 
+        y_hat=model(x_batch.float().to(device),x_a_batch.float().to(device),step)
+        
         loss = criterion(y_batch,y_hat.float().to(device))
         loss.backward()
 
         optimizer.step()
         optimizer.zero_grad()
-
+        t1=time.time()
         batch_losses.append(loss.item())
+        # 此处有问题
+        logger.info(f"[{i+1}/{x_batch.shape[0]}] Training loss: {batch_losses[-1]:.4f} \t Time: {t1-t0:.2f}")
+        i=(i+1)%16
     return batch_losses
 
 
@@ -95,8 +101,6 @@ model=getGSA(
         dropout=0.01
 ).to(device)
 
-for name, param in model.named_parameters():
-    print(f"{name}: {param.device}")
 
 criterion =  nn.MSELoss()
 optimizer=optim.Adam(model.parameters(),lr=0.001)
@@ -106,13 +110,14 @@ train_time=[]
 
 for epoch in range(n_epochs):
     t0 = time.time()
-    batch_losses = train(model)
+    logger1 = get_logger('output/epoch'+str(epoch)+'.log')
+    batch_losses = train(model,logger1)
     t1 = time.time()
         
     train_losses.append(np.mean(batch_losses))
     train_time.append(t1-t0)
 
-    logger=get_logger('output/epoch')
+    logger=get_logger('output/epoch.log')
     logger.info(f"[{epoch}/{n_epochs}] Training loss: {train_losses[-1]:.4f} \t Time: {t1-t0:.2f}")
 
 torch.save(model.state_dict(), "output/output_model/last_run.pt")
