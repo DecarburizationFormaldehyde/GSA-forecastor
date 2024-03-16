@@ -85,6 +85,8 @@ class GSAFilter(nn.Module):
     def forward(self, x, aux, pos):
         device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         deta = torch.zeros((x.shape[0], x.shape[1], 1)).to(device)
+        attn_list = []
+        score_list = []
         for i in range(self.h):
             Q = F.normalize(self.nodes_linear[0][i](x), p=2, dim=-1)
             K = F.normalize(self.nodes_linear[1][i](x), p=2, dim=-1)
@@ -100,6 +102,9 @@ class GSAFilter(nn.Module):
 
             all_similarity = tn_dot_1 + dot_2 + dot_3
             attn = attention(all_similarity)
-            deta = torch.cat([deta, torch.matmul(attn, self.nodes_linear[2][i](x))], dim=-1)
-        return x + self.W_O(deta[:, :, 1:])
+            score = torch.matmul(attn, self.nodes_linear[2][i](x))
+            attn_list.append(attn)
+            score_list.append(score)
+            deta = torch.cat([deta, score], dim=-1)
+        return x + self.W_O(deta[:, :, 1:]), (attn_list, score_list)
 
