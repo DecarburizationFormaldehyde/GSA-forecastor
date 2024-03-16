@@ -41,9 +41,9 @@ class GSAForecaster(nn.Module):
             aux_emb = self.aux_embed(aux[:, :aux.size(1) - pre_time + i, :])
             pos_emb = self.pos_embed(aux[:, :aux.size(1) - pre_time + i, :])
             x_emb = self.graph_embed(x)
-            encode = self.encoder(x_emb[:, :T, :], aux_emb[:, :T, :], pos_emb[:, :T, :])
+            encode, _ = self.encoder(x_emb[:, :T, :], aux_emb[:, :T, :], pos_emb[:, :T, :])
             encode_combine = encode if i == 0 else torch.cat([encode, x_emb[:, T:, :]], dim=1)
-            x_pre = self.decoder(i + 1, encode_combine, encode_combine[:, -1:, :], aux_emb, pos_emb)
+            x_pre, _ = self.decoder(i + 1, encode_combine, encode_combine[:, -1:, :], aux_emb, pos_emb)
             x = torch.cat([x, x_pre], dim=1)
             pre_seq = torch.cat([pre_seq, x_pre], dim=1)
         return pre_seq[:, 1:, :]
