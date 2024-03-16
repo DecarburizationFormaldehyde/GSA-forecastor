@@ -17,9 +17,11 @@ class Encoder(nn.Module):
         self.layers = clones(encoder_layer, N)
 
     def forward(self, x, aux, pos):
+        attn = None
+        score = None
         for layer in self.layers:
-            x = layer(x, aux, pos)
-        return x
+            x, attn, score = layer(x, aux, pos)
+        return x, attn, score
 
 
 class EncoderLayer(nn.Module):
@@ -29,8 +31,8 @@ class EncoderLayer(nn.Module):
         self.ffd = ffd
 
     def forward(self, x, aux, pos):
-        x = self.gsa_filter(x, aux, pos)
-        return x + self.ffd(x)
+        x, attn, score = self.gsa_filter(x, aux, pos)
+        return x + self.ffd(x), attn, score
 
 
 def tn_transform_filter(Q, K, M_1, M_2, T):
@@ -104,5 +106,5 @@ class GSAFilter(nn.Module):
             attn_matrix = torch.cat([attn_matrix, attn], dim=-1)
             score = torch.matmul(attn, self.nodes_linear[2][i](x))
             deta = torch.cat([deta, score], dim=-1)
-        return x + self.W_O(deta[:, :, 1:]), (attn_matrix[:, :, 1:], deta[:, :, 1:])
+        return x + self.W_O(deta[:, :, 1:]), attn_matrix[:, :, 1:], deta[:, :, 1:]
 

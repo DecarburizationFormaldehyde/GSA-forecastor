@@ -13,9 +13,11 @@ class Decoder(nn.Module):
         self.de_embed = de_embed
 
     def forward(self, k, memory, x_pre, aux, pos):
+        attn = None
+        score = None
         for layer in self.layers:
-            x_pre = layer(k, memory, x_pre, aux, pos)
-        return self.de_embed(x_pre)
+            x_pre, attn, score = layer(k, memory, x_pre, aux, pos)
+        return self.de_embed(x_pre), attn, score
 
 
 class DecoderLayer(nn.Module):
@@ -25,8 +27,8 @@ class DecoderLayer(nn.Module):
         self.ffd = ffd
 
     def forward(self, k, memory, x_pre, aux, pos):
-        x = self.gsa_pre(k, memory, x_pre, aux, pos)
-        return x + self.ffd(x)
+        x, attn, score = self.gsa_pre(k, memory, x_pre, aux, pos)
+        return x + self.ffd(x), attn, score
 
 
 def tn_transform_pre(Q, K, M, T, k):
@@ -110,4 +112,4 @@ class GSAPredict(nn.Module):
             score = history_deta + attn[:, :, -1:] * res
             deta = torch.cat([deta, score], dim=-1)
 
-        return x_pre + self.W_O(deta[:, :, 1:]), (attn_matrix[:, :, 1:], deta[:, :, 1:])
+        return x_pre + self.W_O(deta[:, :, 1:]), attn_matrix[:, :, 1:], deta[:, :, 1:]
