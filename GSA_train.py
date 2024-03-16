@@ -38,9 +38,9 @@ def train(model,logger):
         optimizer.zero_grad()
         t1=time.time()
         batch_losses.append(loss.item())
-        # 此处有问题
-        logger.info(f"[{i+1}/{hour_test_loader.__len__}] Training Batch loss: {batch_losses[-1]:.4f} \t Time: {t1-t0:.2f}")
-        i=(i+1)%hour_test_loader.__len__
+
+        logger.info(f"[{i+1}/{len(hour_train_loader)}] Training Batch loss: {batch_losses[-1]:.4f} \t Time: {t1-t0:.2f}")
+        i=(i+1)%len(hour_train_loader)
     return batch_losses
 
 
@@ -126,9 +126,9 @@ train_time=[]
 metrics_last = {}
 metrics_best = {}
 
+loggertoE=get_logger('output/epoch.log')
 for epoch in range(n_epochs):
     t0 = time.time()
-    loggertoE=get_logger('output/epoch.log')
     loggertoE.info(f'epoch[{epoch}]:')
     batch_losses = train(model,loggertoE)
     t1 = time.time()
