@@ -19,8 +19,7 @@ class mape_loss(nn.Module):
     def __init__(self):
         super(mape_loss, self).__init__()
 
-    def forward(self, insample: t.Tensor, freq: int,
-                forecast: t.Tensor, target: t.Tensor, mask: t.Tensor) -> t.float:
+    def forward(self,forecast: t.Tensor, target: t.Tensor) -> t.float:
         """
         MAPE loss as defined in: https://en.wikipedia.org/wiki/Mean_absolute_percentage_error
 
@@ -29,8 +28,19 @@ class mape_loss(nn.Module):
         :param mask: 0/1 mask. Shape: batch, time
         :return: Loss value
         """
-        weights = divide_no_nan(mask, target)
-        return t.mean(t.abs((forecast - target) * weights))
+        # Ensure both inputs have the same shape
+        assert forecast.shape == target.shape, "Inputs must have the same shape"
+
+        # Calculate absolute percentage error
+        abs_percentage_error = t.abs((target - forecast) / target)
+
+        # Handle cases where y_true is zero
+        abs_percentage_error[target == 0] = 0
+
+        # Calculate mean over all elements
+        mape = t.mean(abs_percentage_error)
+
+        return mape
 
 
 class smape_loss(nn.Module):
@@ -81,6 +91,9 @@ class SpeicalLoss:
         loss1=self.criterion1(y_pre,y)
         loss2=self.criterion2(y_pre,y)
         loss=self.niu*loss1+loss2
+        
+        loss.backward()
+        return loss,loss1,loss2
 
 class SimpleLossCompute:
     "A simple loss compute and train function."

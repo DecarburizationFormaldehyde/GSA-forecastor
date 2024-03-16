@@ -3,6 +3,9 @@ import torch.nn as nn
 import logging
 import random
 import torch
+import numpy as np
+
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, accuracy_score, f1_score
 
 device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -39,3 +42,9 @@ def get_logger(filename, verbosity=1, name=None):
  
     return logger
 
+def get_indicators(value,prediction,logger):
+    mae=mean_absolute_error(value.tolist(), prediction.tolist()),             
+    mse= mean_squared_error(value.tolist(), prediction.tolist()),
+    r2= r2_score(value.tolist(), prediction.tolist(), multioutput = "variance_weighted")
+    logger.info('mse'+f'{np.mean(mse):.3f} ± {np.std(mse, ddof=1):.3f}')
+    logger.info('r2'+f'{np.mean(r2):.3f} ± {np.std(r2, ddof=1):.3f}')

@@ -8,6 +8,7 @@ from utils.data_utils import *
 from model.GSA import GSAForecaster
 from utils.model_utils import getGSA
 import time
+from utils.loss_utils import *
 
 device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -31,25 +32,43 @@ def train(model,logger):
 
         y_hat=model(x_batch.float().to(device),x_a_batch.float().to(device),step)
         
-        loss = criterion(y_batch,y_hat.float().to(device))
-        loss.backward()
+        loss,_ = criterion.__call__(y_hat,y_batch.float().to(device))
 
         optimizer.step()
         optimizer.zero_grad()
         t1=time.time()
         batch_losses.append(loss.item())
         # 此处有问题
-        logger.info(f"[{i+1}/{x_batch.shape[0]}] Training loss: {batch_losses[-1]:.4f} \t Time: {t1-t0:.2f}")
+        logger.info(f"[{i+1}/{x_batch.shape[0]}] Training Batch loss: {batch_losses[-1]:.4f} \t Time: {t1-t0:.2f}")
         i=(i+1)%16
     return batch_losses
 
 
-
-    
-
 # test
-def test(test_loader,loadstate=True,medel_loc="",return_graphs=False):
-    pass
+def test(load_state=True,model_loc="",return_graphs=False):
+    if load_state:
+        model.load_state_dict(torch.load(model_loc))
+      
+    with torch.no_grad():
+        model.eval()        
+        predictions = []
+        values = []
+        
+        for batch,batch_a in zip(hour_test_loader,weather_test_loader):
+            x_batch, y_batch = batch[0].float().to(device), batch[1].float().to(device)
+            x_a_batch, _ = batch_a[0].float().to(device), batch_a[1].float().to(device)
+
+            if return_graphs: 
+                y_hat = model(x_batch.float().to(device),x_a_batch.float().to(device),step)
+                # 待补充attention权重图形化部分
+            else:
+                y_hat = model(x_batch.float().to(device),x_a_batch.float().to(device),step)
+            
+            y_hat = y_hat.cpu().detach().numpy()
+            predictions.append(y_hat)
+            values.append(y_batch.cpu().detach().numpy())            
+
+    return predictions, values
 
 
 # Model args
@@ -71,10 +90,6 @@ T = config['T']
 corr_matrix = np.load('model/test_data/corr_matrix.npy')  # (67, 67)
 corr_matrix[corr_matrix != 0] = 1
 graph_dependency = torch.tensor(corr_matrix, dtype=torch.float32).to(device)
-# Data args
-
-# train args
-train_loss=[]
 
 
 # Training
@@ -101,12 +116,15 @@ model=getGSA(
         dropout=0.01
 ).to(device)
 
-
-criterion =  nn.MSELoss()
+niu=2
+criterion =  SpeicalLoss(nn.MSELoss().to(device),mape_loss().to(device),niu)
 optimizer=optim.Adam(model.parameters(),lr=0.001)
 
+# train args
 train_losses=[]
 train_time=[]
+metrics_last = {}
+metrics_best = {}
 
 for epoch in range(n_epochs):
     t0 = time.time()
@@ -121,3 +139,12 @@ for epoch in range(n_epochs):
     logger.info(f"[{epoch}/{n_epochs}] Training loss: {train_losses[-1]:.4f} \t Time: {t1-t0:.2f}")
 
 torch.save(model.state_dict(), "output/output_model/last_run.pt")
+
+logger_to_result=get_logger('output/output.txt')
+logger_to_result.info("Last model this run: ")
+t0 = time.time()
+predictions, values = test(load_state = False)
+t1 = time.time()
+inf_time = t1-t0
+get_indicators(values,predictions,logger_to_result)
+logger_to_result('test time:'+f'{inf_time}')
