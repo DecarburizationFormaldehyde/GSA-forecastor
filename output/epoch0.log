@@ -1,1 +1,2 @@
-[2024-03-16 11:43:47,134][GSA_train.py][line:42][INFO] [1/16] Training Batch loss: 193.0096 	 Time: 502.54
+[2024-03-16 13:28:02,235][GSA_train.py][line:42][INFO] [1/16] Training Batch loss: 40.2981 	 Time: 198.80
+[2024-03-16 13:31:07,558][GSA_train.py][line:42][INFO] [2/16] Training Batch loss: 56.5628 	 Time: 185.32

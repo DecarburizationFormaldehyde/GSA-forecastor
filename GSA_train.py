@@ -39,8 +39,8 @@ def train(model,logger):
         t1=time.time()
         batch_losses.append(loss.item())
         # 此处有问题
-        logger.info(f"[{i+1}/{x_batch.shape[0]}] Training Batch loss: {batch_losses[-1]:.4f} \t Time: {t1-t0:.2f}")
-        i=(i+1)%16
+        logger.info(f"[{i+1}/{hour_test_loader.__len__}] Training Batch loss: {batch_losses[-1]:.4f} \t Time: {t1-t0:.2f}")
+        i=(i+1)%hour_test_loader.__len__
     return batch_losses
 
 
@@ -94,7 +94,7 @@ graph_dependency = torch.tensor(corr_matrix, dtype=torch.float32).to(device)
 
 # Training
 step=3
-n_epochs=50
+n_epochs=3
 
 
 model=getGSA(
@@ -128,23 +128,22 @@ metrics_best = {}
 
 for epoch in range(n_epochs):
     t0 = time.time()
-    logger1 = get_logger('output/epoch'+str(epoch)+'.log')
-    batch_losses = train(model,logger1)
+    loggertoE=get_logger('output/epoch.log')
+    loggertoE.info(f'epoch[{epoch}]:')
+    batch_losses = train(model,loggertoE)
     t1 = time.time()
         
     train_losses.append(np.mean(batch_losses))
     train_time.append(t1-t0)
 
-    logger=get_logger('output/epoch.log')
-    logger.info(f"[{epoch}/{n_epochs}] Training loss: {train_losses[-1]:.4f} \t Time: {t1-t0:.2f}")
+    loggertoE.info(f"[{epoch}/{n_epochs}] Training loss: {train_losses[-1]:.4f} \t Time: {t1-t0:.2f}")
 
 torch.save(model.state_dict(), "output/output_model/last_run.pt")
 
-logger_to_result=get_logger('output/output.txt')
-logger_to_result.info("Last model this run: ")
+loggertoE.info("Last model this run: ")
 t0 = time.time()
 predictions, values = test(load_state = False)
 t1 = time.time()
 inf_time = t1-t0
-get_indicators(values,predictions,logger_to_result)
-logger_to_result('test time:'+f'{inf_time}')
+get_indicators(values,predictions,loggertoE)
+loggertoE('test time:'+f'{inf_time}')
